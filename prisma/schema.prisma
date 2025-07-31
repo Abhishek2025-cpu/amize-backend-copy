@@ -1,0 +1,694 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  username        String    @unique
+  email           String    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  fullName        String? // Computed or stored full name
+  bio             String?   @db.Text
+  profilePhotoUrl String?
+  phoneNumber     String?
+  address         String?
+  dateOfBirth     DateTime?
+  gender          String? // "Male", "Female", or custom
+
+  // User roles
+  role Role @default(USER)
+
+  // Creator-specific fields
+  creatorVerified     Boolean @default(false) // Blue checkmark verification
+  creatorCategory     String? // E.g., "Comedy", "Music", "Education"
+  monetizationEnabled Boolean @default(false)
+
+  // Admin-specific fields
+  adminPermissions String? @db.Text // JSON array of specific permissions
+
+  // Modified Authentication & Security section
+  forgotPasswordToken    String?
+  forgotPasswordExpiry   DateTime?
+  verificationCode       String? // Changed from verificationToken
+  verificationCodeExpiry DateTime? // New field for code expiration
+  verified               Boolean   @default(false)
+  pin                    String?
+
+  // Interests & Personalization
+  interests Interest[]
+
+  // Follower/Following Relationships
+  followers Follow[] @relation("following")
+  following Follow[] @relation("follower")
+
+  // Content
+  videos   Video[]
+  comments Comment[]
+  likes    Like[]
+
+  // Interactions
+  reports       Report[] @relation("reportedBy")
+  reportedItems Report[] @relation("reportedUser")
+
+  // Messaging
+  sentMessages      Message[]          @relation("messageSender")
+  receivedMessages  Message[]          @relation("messageReceiver")
+  conversations     Conversation[]     @relation("ConversationParticipants")
+  conversationUsers ConversationUser[]
+
+  // Online status tracking
+  isOnline   Boolean   @default(false)
+  lastSeenAt DateTime?
+
+  // Notifications
+  notifications        Notification[] @relation("notificationReceiver")
+  causingNotifications Notification[] @relation("notificationCauser")
+
+  // Sound Store
+  soundStore SoundStore[]
+
+  // Activity
+  viewHistory ViewHistory[]
+
+  // Analytics for creators
+  insights VideoInsight[]
+
+  // Device History
+  deviceHistory DeviceHistory[]
+
+  // Uploads
+  uploads Upload[]
+
+  // Subscription
+  isEligibleForCreator Boolean @default(false)
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  deactivatedAt DateTime?
+
+  subscribedTo UserSubscription[] @relation("subscriber")
+  subscribers  UserSubscription[] @relation("subscribed_creator")
+
+  settings          UserSettings?
+  // TODO NEW: Creator's subscription plans
+  subscriptionPlans SubscriptionPlan[]
+  Conversation      Conversation?      @relation(fields: [conversationId], references: [id])
+  conversationId    String?
+
+  // Indexes
+  @@index([username])
+  @@index([email])
+}
+
+model UserSettings {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  // Appearance Settings
+  darkMode   Boolean @default(false)
+  rememberMe Boolean @default(false)
+
+  // Language Settings
+  language String @default("English")
+
+  // Security Settings
+  useFingerprint Boolean @default(false)
+  useFaceId      Boolean @default(false)
+  pin            String? // Stored encrypted
+
+  // Privacy Settings
+  isPrivate Boolean @default(false)
+
+  // Account Settings
+  isBusinessAccount Boolean @default(false)
+
+  // Social Media
+  instagramHandle String?
+  facebookHandle  String?
+  twitterHandle   String?
+
+  // Notification Settings
+  notificationSettings String? @db.Text // JSON structure
+
+  // Creator Settings
+  creatorSubscriptionPrice Float?
+  minSubscriptionAmount    Float?
+  maxSubscriptionAmount    Float?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("following", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Video {
+  id           String  @id @default(uuid())
+  title        String?
+  description  String? @db.Text
+  videoUrl     String
+  thumbnailUrl String?
+  duration     Float // Duration in seconds
+  isPublic     Boolean @default(true)
+
+  // Content attributes
+  soundId String?
+  sound   Sound?  @relation(fields: [soundId], references: [id])
+
+  // Owner
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  // Interactions
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  views    ViewHistory[]
+  reports  Report[]
+  insights VideoInsight[] // Analytics data
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([userId])
+  @@index([soundId])
+  @@index([createdAt])
+}
+
+model Sound {
+  id         String  @id @default(uuid())
+  title      String
+  artistName String?
+  soundUrl   String
+  duration   Float // Duration in seconds
+  isOriginal Boolean @default(false)
+
+  // Usage
+  videos Video[] // Videos using this sound
+
+  // Store
+  stores SoundStore[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([title])
+}
+
+model SoundStore {
+  id        String   @id @default(uuid())
+  sound     Sound    @relation(fields: [soundId], references: [id])
+  soundId   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, soundId])
+  @@index([userId])
+  @@index([soundId])
+}
+
+model Interest {
+  id   String @id @default(uuid())
+  name String @unique
+
+  // Users interested in this category
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+}
+
+model Comment {
+  id      String @id @default(uuid())
+  text    String @db.Text
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId String
+
+  // Reply structure
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies  Comment[] @relation("CommentReplies")
+
+  // Likes on comments
+  likesCount Int @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([userId])
+  @@index([videoId])
+  @@index([parentId])
+}
+
+model Share {
+  id      String @id @default(uuid())
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId String
+
+  // Share destination (can be expanded based on platforms)
+  platform String // e.g., "whatsapp", "facebook", "instagram", "twitter", "copy_link"
+
+  // If we want to track who shared (optional)
+  userId String?
+
+  createdAt DateTime @default(now())
+
+  // Indexes
+  @@index([videoId])
+}
+
+model ViewHistory {
+  id             String   @id @default(uuid())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  video          Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId        String
+  watchTime      Float // Duration watched in seconds
+  completionRate Float? // Percentage of video watched
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([createdAt])
+}
+
+model Report {
+  id          String  @id @default(uuid())
+  reason      String // Reason category like "inappropriate", "spam", etc.
+  description String? @db.Text
+
+  // Reporter
+  reportedBy   User   @relation("reportedBy", fields: [reportedById], references: [id])
+  reportedById String
+
+  // What is being reported
+  videoId String?
+  video   Video?  @relation(fields: [videoId], references: [id], onDelete: SetNull)
+
+  userId String?
+  user   User?   @relation("reportedUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  // Comment reports could be added similarly
+
+  // Status
+  status String @default("pending") // "pending", "reviewed", "actioned", "dismissed"
+
+  // Admin who handled the report
+  reviewedBy  String? // Admin user ID
+  actionTaken String? // What action was taken
+
+  // Timestamps
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  // Indexes
+  @@index([reportedById])
+  @@index([videoId])
+  @@index([userId])
+}
+
+model Message {
+  id      String @id @default(uuid())
+  content String @db.Text
+
+  // Message type for different kinds of messages
+  messageType String @default("text") // "text", "image", "video", "file", "system"
+
+  // File attachment support
+  attachmentUrl  String?
+  attachmentType String? // "image", "video", "file"
+  fileName       String? // Original file name
+
+  // Participants
+  sender     User   @relation("messageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   String
+  receiver   User   @relation("messageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+
+  // Conversation relationship
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+
+  // Message threading (optional - for replies)
+  replyToId String?
+  replyTo   Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("MessageReplies")
+
+  // Delivery and read status
+  isDelivered Boolean   @default(false)
+  deliveredAt DateTime?
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+
+  // Soft delete (instead of hard delete)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes for better query performance
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([isDeleted])
+}
+
+model Conversation {
+  id String @id @default(uuid())
+
+  // Conversation type
+  type String @default("direct") // "direct", "group" (for future group messaging)
+
+  // Participants (many-to-many relationship)
+  participants User[] @relation("ConversationParticipants")
+
+  // Messages in this conversation
+  messages Message[]
+
+  // Last message info for quick access
+  lastMessageId      String?
+  lastMessageContent String?   @db.Text
+  lastMessageAt      DateTime?
+  lastMessageSender  String?
+
+  // Conversation metadata
+  title       String? // For group conversations or custom titles
+  description String? @db.Text
+  imageUrl    String? // Conversation image
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  User              User[]
+  conversationUsers ConversationUser[]
+
+  // Indexes
+  @@index([type])
+  @@index([lastMessageAt])
+  @@index([isActive])
+}
+
+model ConversationUser {
+  id String @id @default(uuid())
+
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+
+  // User-specific conversation settings
+  isMuted       Boolean   @default(false)
+  isPinned      Boolean   @default(false)
+  lastReadAt    DateTime?
+  notifications Boolean   @default(true)
+
+  // Timestamps
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  // Ensure one record per user-conversation pair
+  @@unique([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Notification {
+  id      String @id @default(uuid())
+  type    String // e.g., "like", "comment", "follow", "mention"
+  message String
+
+  // Users involved
+  user   User   @relation("notificationReceiver", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  causerUser   User?   @relation("notificationCauser", fields: [causerUserId], references: [id], onDelete: SetNull)
+  causerUserId String?
+
+  // Related content
+  videoId String?
+
+  // Status
+  isRead Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  // Indexes
+  @@index([userId])
+  @@index([causerUserId])
+  @@index([createdAt])
+}
+
+// Subscription plans available on the platform
+model SubscriptionPlan {
+  id           String  @id @default(uuid())
+  name         String
+  description  String? @db.Text
+  price        Float
+  currency     String  @default("USD")
+  intervalType String // "monthly", "yearly", etc.
+  features     String? @db.Text // JSON array of features
+
+  // TODO NEW: Connect to creator
+  creator   User?   @relation(fields: [creatorId], references: [id])
+  creatorId String? // Optional to allow platform-defined templates
+
+  // NEW: Is this a platform template or active creator plan
+  isTemplate Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  subscriptions UserSubscription[]
+
+  // Indexes
+  @@index([price])
+  @@index([creatorId]) // NEW: Index for faster queries
+}
+
+// Active subscriptions between creators and users
+model UserSubscription {
+  id           String           @id @default(uuid())
+  subscriber   User             @relation("subscriber", fields: [subscriberId], references: [id])
+  subscriberId String
+  creator      User             @relation("subscribed_creator", fields: [creatorId], references: [id])
+  creatorId    String
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId       String
+
+  status    String    @default("active") // "active", "canceled", "expired"
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  autoRenew Boolean   @default(true)
+
+  // Payment tracking
+  lastPaymentDate DateTime?
+  nextPaymentDate DateTime?
+  paymentMethod   String? // Reference to payment method
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  SubscriptionPayment SubscriptionPayment[]
+
+  // Indexes
+  @@unique([subscriberId, creatorId])
+  @@index([subscriberId])
+  @@index([creatorId])
+  @@index([status])
+}
+
+// Payment history for subscriptions
+model SubscriptionPayment {
+  id            String  @id @default(uuid())
+  amount        Float
+  currency      String  @default("USD")
+  status        String // "successful", "failed", "refunded"
+  paymentMethod String
+  transactionId String? // External payment processor ID
+
+  userSubscription   UserSubscription @relation(fields: [userSubscriptionId], references: [id])
+  userSubscriptionId String
+
+  createdAt DateTime @default(now())
+
+  // Indexes
+  @@index([userSubscriptionId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// For advanced analytics
+// Role enum for user types
+enum Role {
+  USER
+  CREATOR
+  ADMIN
+}
+
+model VideoInsight {
+  id      String @id @default(uuid())
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  // Metrics
+  viewCount         Int @default(0)
+  uniqueViewerCount Int @default(0)
+  likeCount         Int @default(0)
+  commentCount      Int @default(0)
+  shareCount        Int @default(0)
+
+  // Demographic data (aggregated)
+  averageWatchTime      Float?
+  averageCompletionRate Float?
+
+  // Gender distribution (as JSON string or separate fields)
+  malePercentage   Float?
+  femalePercentage Float?
+  otherPercentage  Float?
+
+  // Age ranges (as JSON string or separate fields)
+  ageRanges String? @db.Text // JSON formatted
+
+  // Geographic distribution
+  topCountries String? @db.Text // JSON formatted
+
+  // Retention data
+  retentionRate Float?
+  dropoffPoints String? @db.Text // JSON formatted
+
+  // Time period
+  date DateTime
+
+  // Indexes
+  @@unique([videoId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model DeviceHistory {
+  id              String    @id @default(uuid())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  deviceId        String
+  deviceName      String?
+  deviceModel     String?
+  osVersion       String?
+  appVersion      String?
+  ipAddress       String?
+  isActive        Boolean   @default(true)
+  loginTimestamp  DateTime  @default(now())
+  logoutTimestamp DateTime?
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([isActive])
+}
+
+model Upload {
+  id               String       @id @default(uuid())
+  fileName         String
+  originalFileName String
+  fileType         String // MIME type (e.g., "image/jpeg", "video/mp4")
+  fileSize         Int // Size in bytes
+  fileUrl          String // Full URL path to the file
+  fileKey          String // Storage key/path identifier
+  fileBucket       String? // Storage bucket name if using cloud storage
+  uploadType       UploadType
+  status           UploadStatus @default(PROCESSING)
+
+  // Metadata for media files
+  width        Int? // For images and videos
+  height       Int? // For images and videos
+  duration     Float? // For videos and audio in seconds
+  thumbnailUrl String? // For videos
+
+  // Processing info
+  processingError String? @db.Text
+
+  // Owner
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([userId])
+  @@index([uploadType])
+  @@index([status])
+  @@index([fileType])
+  @@index([createdAt])
+}
+
+enum UploadType {
+  PROFILE_PHOTO
+  VIDEO
+  THUMBNAIL
+  SOUND
+  OTHER
+}
+
+enum UploadStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}

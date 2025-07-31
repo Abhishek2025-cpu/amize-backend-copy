@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 17, 24, 39;
+  --background-end-rgb: 17, 24, 39;
+}
+
+html{
+  overflow-x: hidden;
+}
+
+body {
+  @apply bg-gray-900 text-gray-200;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: var(--font-figtree, "Figtree", sans-serif);
+  font-optical-sizing: auto;
+  line-height: 1.5;
+  font-style: normal;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip !important;
+}
+
+/* Grid Background */
+.grid-line {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.grid-background {
+  transform: perspective(600px) rotateX(60deg) scale(1.6);
+  transform-origin: center center;
+}

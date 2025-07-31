@@ -1,0 +1,62 @@
+{
+  "name": "videohost-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "build": "next build",
+    "start": "NODE_ENV=production node server.js",
+    "start:next": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.817.0",
+    "@aws-sdk/lib-storage": "^3.817.0",
+    "@aws-sdk/s3-request-presigner": "^3.817.0",
+    "@faker-js/faker": "^9.6.0",
+    "@prisma/client": "^6.13.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-react": "^5.18.0",
+    "bcryptjs": "^3.0.2",
+    "csv-parser": "^3.2.0",
+    "csv-stringify": "^6.5.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "framer-motion": "^12.18.1",
+    "generate": "^0.14.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.485.0",
+    "mailersend": "^2.5.0",
+    "next": "15.3.2",
+    "nodemailer": "^6.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.33.5",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "stripe": "^18.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "swagger-ui-react": "^5.22.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^20",
+    "@types/react": "19.1.5",
+    "@types/react-dom": "19.1.5",
+    "@types/socket.io": "^3.0.1",
+    "daisyui": "^5.0.43",
+    "prisma": "^6.13.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.1.5",
+    "@types/react-dom": "19.1.5"
+  }
+}

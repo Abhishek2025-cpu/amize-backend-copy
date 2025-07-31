@@ -1,0 +1,308 @@
+/* swagger-custom.css */
+
+/* Main swagger container */
+.swagger-ui {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Main header bar - Hide default Swagger title */
+.swagger-ui .topbar {
+    display: none;
+}
+
+/* Info section */
+.swagger-ui .info {
+    margin: 0;
+}
+
+.swagger-ui .info .title {
+    color: #333333;
+    font-weight: 600;
+}
+
+.swagger-ui .info .title small.version-stamp {
+    background-color: #f16d7e;
+}
+
+/* Tags / Section headers */
+.swagger-ui .opblock-tag {
+    border-bottom: 1px solid #eaeaea;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.swagger-ui .opblock-tag:hover {
+    background-color: #fdf2f4;
+    color: #f16d7e;
+}
+
+/* Endpoint blocks */
+.swagger-ui .opblock {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    border: 1px solid #eaeaea;
+    margin-bottom: 1rem;
+}
+
+/* GET blocks */
+.swagger-ui .opblock.opblock-get {
+    background: #f9fafb;
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary {
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background-color: #3b82f6;
+}
+
+/* POST blocks */
+.swagger-ui .opblock.opblock-post {
+    background: #f9fafb;
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary {
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background-color: #10b981;
+}
+
+/* PUT blocks */
+.swagger-ui .opblock.opblock-put {
+    background: #f9fafb;
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary {
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+    background-color: #f59e0b;
+}
+
+/* DELETE blocks */
+.swagger-ui .opblock.opblock-delete {
+    background: #f9fafb;
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary {
+    border-color: #ddd;
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+    background-color: #ef4444;
+}
+
+/* Endpoint summary */
+.swagger-ui .opblock .opblock-summary {
+    padding: 0.6rem 1rem;
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+    color: #666;
+    font-weight: 400;
+}
+
+/* Parameters and Responses */
+.swagger-ui .parameters-container,
+.swagger-ui .responses-wrapper {
+    background: #fff;
+}
+
+.swagger-ui table tbody tr td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+/* Authorization buttons */
+.swagger-ui .btn.authorize {
+    border-color: #f16d7e;
+    color: #f16d7e;
+}
+
+.swagger-ui .btn.authorize svg {
+    fill: #f16d7e;
+}
+
+.swagger-ui .btn.authorize:hover {
+    background-color: #fdf2f4;
+}
+
+/* Execute buttons */
+.swagger-ui .btn.execute {
+    background-color: #f16d7e;
+    color: white;
+    border-color: #f16d7e;
+    box-shadow: 0 2px 4px rgba(241, 109, 126, 0.2);
+}
+
+.swagger-ui .btn.execute:hover {
+    background-color: #e05165;
+}
+
+/* Try-it-out buttons */
+.swagger-ui .try-out__btn {
+    background-color: transparent;
+    border-color: #f16d7e;
+    color: #f16d7e;
+}
+
+.swagger-ui .try-out__btn:hover {
+    background-color: #fdf2f4;
+}
+
+/* Models section */
+.swagger-ui section.models {
+    border: 1px solid #eaeaea;
+    border-radius: 6px;
+    margin-top: 2rem;
+}
+
+.swagger-ui section.models.is-open h4 {
+    color: #333;
+    border-bottom: 1px solid #eaeaea;
+}
+
+/* Schema / model boxes */
+.swagger-ui .model-box {
+    background: #f9fafb;
+    border-radius: 4px;
+}
+
+.swagger-ui .model {
+    color: #333;
+}
+
+/* Parameter inputs */
+.swagger-ui input[type=text],
+.swagger-ui input[type=password],
+.swagger-ui input[type=search],
+.swagger-ui input[type=number],
+.swagger-ui textarea {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.swagger-ui input[type=text]:focus,
+.swagger-ui input[type=password]:focus,
+.swagger-ui input[type=search]:focus,
+.swagger-ui input[type=number]:focus,
+.swagger-ui textarea:focus {
+    border-color: #f16d7e;
+    box-shadow: 0 0 0 2px rgba(241, 109, 126, 0.2);
+}
+
+/* Select boxes */
+.swagger-ui select {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Scrollbars */
+.swagger-ui ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.swagger-ui ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Schema tables */
+.swagger-ui .prop-type {
+    color: #f16d7e;
+}
+
+.swagger-ui .prop-format {
+    color: #666;
+}
+
+/* Required labels */
+.swagger-ui .parameter__name.required:after {
+    color: #f16d7e;
+}
+
+/* Response codes */
+.swagger-ui .response-col_status {
+    font-weight: 600;
+}
+
+/* 200 responses */
+.swagger-ui .response-col_status .response-undocumented {
+    color: #10b981;
+}
+
+/* Highlighted code blocks */
+.swagger-ui .highlight-code {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Markdown content */
+.swagger-ui .markdown p {
+    margin-bottom: 0.75rem;
+}
+
+.swagger-ui .markdown code {
+    background: #f1f1f1;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    color: #f16d7e;
+}
+
+/* Copy to clipboard buttons */
+.swagger-ui .copy-to-clipboard {
+    background: #f9fafb;
+    border-color: #ddd;
+}
+
+.swagger-ui .copy-to-clipboard:hover {
+    background: #f16d7e;
+    color: white;
+}
+
+/* Loading animation */
+.swagger-ui .loading-container .loading:after {
+    background: #f16d7e;
+}
+
+/* Authorization modal */
+.swagger-ui .dialog-ux .modal-ux {
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header {
+    background: #f9fafb;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header h3 {
+    color: #333;
+}
+
+/* Custom wrapper for better UI integration */
+.swagger-wrapper {
+    padding: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}

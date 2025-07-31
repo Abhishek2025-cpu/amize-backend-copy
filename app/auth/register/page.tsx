@@ -407,7 +407,7 @@ import Link from 'next/link';
 import Image from "next/image";
 
 // Define the API base URL as a constant
-const API_BASE_URL = 'https://amize-backend-copy.onrender.com';
+const API_BASE_URL = 'https://amize-backend-copy.onrender.com'; // Replace with your actual API base URL
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({

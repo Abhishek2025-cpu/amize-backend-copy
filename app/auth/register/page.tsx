@@ -400,14 +400,12 @@
 'use client'
 
 import React, { useState } from 'react';
-// Import useRouter for client-side navigation
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Calendar, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from "next/image";
 
-// Define the API base URL as a constant
-const API_BASE_URL = 'https://amize-backend-copy.onrender.com'; // Replace with your actual API base URL
+const API_BASE_URL = 'https://amize-backend-copy.onrender.com';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -424,19 +422,15 @@ const RegisterPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
-    
-    // Initialize the router
     const router = useRouter();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const validateForm = () => {
+        // ... (validation logic remains the same) ...
         if (!formData.firstName || !formData.lastName || !formData.username ||
             !formData.email || !formData.password || !formData.confirmPassword ||
             !formData.dateOfBirth) {
@@ -471,8 +465,10 @@ const RegisterPage = () => {
         setLoading(true);
         setError('');
 
+        // --- DEBUG LOG 1: See exactly what data is being prepared ---
+        console.log('--- Submitting this data to backend: ---', formData);
+
         try {
-            // --- THIS IS THE UPDATED API CALL ---
             const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
@@ -481,30 +477,37 @@ const RegisterPage = () => {
                 body: JSON.stringify(formData),
             });
 
+            // Try to parse the JSON response regardless of the status code
             const result = await response.json();
 
-            if (result.success) {
+            // --- DEBUG LOG 2: See the raw response from the server ---
+            console.log('--- Server Response Status: ---', response.status);
+            console.log('--- Server Response Body: ---', result);
+
+            if (response.ok && result.success) { // Check both response.ok and result.success
                 localStorage.setItem('authToken', result.token);
                 localStorage.setItem('refreshToken', result.refreshToken);
                 localStorage.setItem('verificationEmail', formData.email);
-
-                // Use router.push for a smoother SPA-like navigation
                 router.push('/auth/verify');
             } else {
-                setError(result.message || 'Registration failed');
+                // --- DEBUG LOG 3: Specifically log the error message from the server ---
+                console.error('--- Server responded with an error: ---', result.message || 'No specific error message provided.');
+                setError(result.message || 'Registration failed. Please try again.');
             }
         } catch (err) {
-            setError('Network error. Please try again.');
+            // --- DEBUG LOG 4: Catches network errors or if the response isn't valid JSON ---
+            console.error('--- A network or parsing error occurred: ---', err);
+            setError('An unexpected error occurred. Please check your network and try again.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div
-            className="min-h-screen flex items-center justify-center py-20 bg-gradient-to-br via-gray-900 to-gray-950">
-            {/* Background decorations */}
-            <div
+        <div className="min-h-screen flex items-center justify-center py-20 bg-gradient-to-br via-gray-900 to-gray-950">
+            {/* ... rest of your JSX remains unchanged ... */}
+              {/* Background decorations */}
+              <div
                 className="absolute -top-8 -left-8 w-64 h-64 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob"></div>
             <div
                 className="absolute -bottom-8 -right-8 w-64 h-64 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000"></div>

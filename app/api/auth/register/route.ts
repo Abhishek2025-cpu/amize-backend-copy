@@ -644,7 +644,7 @@ export async function POST(request: Request) {
                 data: {
                     username, email, passwordHash: hashedPassword, firstName, lastName,
                     fullName: `${firstName} ${lastName}`, bio, gender, dateOfBirth,
-                    profilePhotoUrl, verificationCode, verificationCodeExpiry,
+                    profilePhotoUrl, verificationCode, verificationCodeExpiry, role: 'USER',
                 },
             });
 

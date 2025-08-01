@@ -634,7 +634,7 @@ export async function POST(request: Request) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // *** FIX: Generate verification code and expiry for each request ***
+   
         const verificationCode = generateVerificationCode(6);
         const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 

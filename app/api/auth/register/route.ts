@@ -164,44 +164,38 @@ import { generateVerificationCode, sendVerificationCodeEmail } from '@/lib/email
 
 import { prisma } from '@/lib/prisma';
 
-// Username validation helper
+// --- MODIFICATION START ---
+// Updated the regex to allow the '@' symbol in usernames.
 function isValidUsername(username: string): boolean {
-    // Only allow alphanumeric characters, underscores, and periods
+    // Only allow alphanumeric characters, underscores, periods, and '@'
     // Must be 3-30 characters long
-    const usernameRegex = /^[a-zA-Z0-9_.]{3,30}$/;
+    const usernameRegex = /^[a-zA-Z0-9_@.]{3,30}$/;
     return usernameRegex.test(username);
 }
+// --- MODIFICATION END ---
 
-// Password strength validation helper
+
+// Password strength validation helper (no changes needed here)
 function isStrongPassword(password: string): { isValid: boolean; message: string } {
     if (password.length < 8) {
         return { isValid: false, message: "Password must be at least 8 characters long" };
     }
-
-    // Check for at least one uppercase letter
     if (!/[A-Z]/.test(password)) {
         return { isValid: false, message: "Password must contain at least one uppercase letter" };
     }
-
-    // Check for at least one lowercase letter
     if (!/[a-z]/.test(password)) {
         return { isValid: false, message: "Password must contain at least one lowercase letter" };
     }
-
-    // Check for at least one number
     if (!/[0-9]/.test(password)) {
         return { isValid: false, message: "Password must contain at least one number" };
     }
-
-    // Check for at least one special character
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
         return { isValid: false, message: "Password must contain at least one special character" };
     }
-
     return { isValid: true, message: "" };
 }
 
-// Calculate age from date of birth
+// Calculate age from date of birth (no changes needed here)
 function calculateAge(dateOfBirth: Date): number {
     const today = new Date();
     let age = today.getFullYear() - dateOfBirth.getFullYear();
@@ -214,26 +208,32 @@ function calculateAge(dateOfBirth: Date): number {
     return age;
 }
 
-// Request body validation schema
-// Update the registerSchema in /auth/register route
+
+// --- MODIFICATION START ---
+// Updated the schema to be more flexible and prevent common validation errors.
 const registerSchema = z.object({
     username: z.string()
         .min(3, { message: "Username must be at least 3 characters" })
         .max(30, { message: "Username cannot exceed 30 characters" })
         .refine(val => isValidUsername(val), {
-            message: "Username can only contain letters, numbers, underscores, and periods"
+            // Updated error message to reflect the new allowed characters
+            message: "Username can only contain letters, numbers, underscores, periods, and @"
         }),
     email: z.string().email({ message: "Invalid email address" }),
     password: z.string()
         .min(8, { message: "Password must be at least 8 characters" })
         .refine((val: string) => isStrongPassword(val).isValid, {
-            message: "Password must meet the strength requirements"
+             // The original message was "Password must meet the strength requirements".
+             // Providing the actual reason from the function is more user-friendly.
+            message: "Password must have uppercase, lowercase, number, and special character."
         }),
     confirmPassword: z.string(),
-    firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
-    lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
-    bio: z.string().max(80, { message: "Bio cannot exceed 80 characters" }).optional(),
-    gender: z.string().optional(),
+    // Added .trim() to remove accidental whitespace from user input.
+    firstName: z.string().trim().min(2, { message: "First name must be at least 2 characters" }),
+    lastName: z.string().trim().min(2, { message: "Last name must be at least 2 characters" }),
+    // Added .nullable() to allow these optional fields to be explicitly set to null.
+    bio: z.string().max(80, { message: "Bio cannot exceed 80 characters" }).nullable().optional(),
+    gender: z.string().nullable().optional(),
     dateOfBirth: z.string()
         .transform(val => new Date(val))
         .refine(val => !isNaN(val.getTime()), {
@@ -244,11 +244,9 @@ const registerSchema = z.object({
         }),
     interests: z.array(z.string()).optional(),
     profilePhotoUrl: z.string().url().optional().nullable(),
-    // Add security fields
-    pin: z.string().length(4).regex(/^\d{4}$/, { message: "PIN must be 4 digits" }).optional(),
+    pin: z.string().length(4).regex(/^\d{4}$/, { message: "PIN must be 4 digits" }).nullable().optional(),
     useFingerprint: z.boolean().optional(),
     useFaceId: z.boolean().optional(),
-    // Device fields
     deviceId: z.string().optional(),
     deviceInfo: z.object({
         deviceName: z.string().optional(),
@@ -260,24 +258,25 @@ const registerSchema = z.object({
     message: "Passwords do not match",
     path: ["confirmPassword"],
 });
+// --- MODIFICATION END ---
+
 
 const verificationCode = generateVerificationCode(6);
-
-// Set expiration time (10 minutes from now)
 const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
 
-        // Validate request body
         const validationResult = registerSchema.safeParse(body);
         if (!validationResult.success) {
+            console.error("Validation Errors:", validationResult.error.flatten());
             return NextResponse.json(
                 {
                     success: false,
                     message: 'Validation error',
-                    errors: validationResult.error.errors
+                    // Flattening the errors provides a much clearer response for debugging
+                    errors: validationResult.error.flatten().fieldErrors
                 },
                 { status: 400 }
             );
@@ -298,7 +297,6 @@ export async function POST(request: Request) {
             deviceInfo
         } = validationResult.data;
 
-        // Check if email or username already exists
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
@@ -320,15 +318,9 @@ export async function POST(request: Request) {
             );
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Generate verification token
-        const verificationToken = crypto.randomBytes(32).toString('hex');
-
-        // Create user with transaction to handle interests
         const userData = await prisma.$transaction(async (tx) => {
-            // Create the user first
             const newUser = await tx.user.create({
                 data: {
                     username,
@@ -346,18 +338,14 @@ export async function POST(request: Request) {
                 },
             });
 
-            // Add interests if provided
             if (interests && interests.length > 0) {
                 for (const interestName of interests) {
-                    // Create the interest if it doesn't exist
                     await tx.interest.upsert({
                         where: { name: interestName },
                         update: {},
                         create: { name: interestName },
                     });
                 }
-
-                // Connect interests to user
                 await tx.user.update({
                     where: { id: newUser.id },
                     data: {
@@ -368,10 +356,8 @@ export async function POST(request: Request) {
                 });
             }
 
-            // Record device if provided
             if (deviceId) {
                 const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
-
                 await tx.deviceHistory.create({
                     data: {
                         userId: newUser.id,
@@ -386,7 +372,6 @@ export async function POST(request: Request) {
                 });
             }
 
-            // Return user with interests
             return tx.user.findUnique({
                 where: { id: newUser.id },
                 include: {
@@ -404,16 +389,12 @@ export async function POST(request: Request) {
             throw new Error('Failed to create user');
         }
 
-        // Send verification email with code
         await sendVerificationCodeEmail(email, firstName, verificationCode);
 
-        // For development/testing, include the verification code in the response
-        // In production, remove this or use a feature flag
         const devInfo = process.env.NODE_ENV === 'development'
             ? { verificationCode }
             : {};
 
-        // Generate JWT token for immediate authentication
         const token = jwt.sign(
             {
                 userId: userData.id,
@@ -425,20 +406,17 @@ export async function POST(request: Request) {
             { expiresIn: '24h' }
         );
 
-        // Generate refresh token
         const refreshToken = jwt.sign(
             { userId: userData.id },
             process.env.JWT_REFRESH_SECRET as string,
             { expiresIn: '7d' }
         );
 
-        // Update last login timestamp
         await prisma.user.update({
             where: { id: userData.id },
             data: { lastLoginAt: new Date() },
         });
 
-        // Remove sensitive information from the response
         const {
             passwordHash,
             verificationCode: _code,
@@ -468,6 +446,321 @@ export async function POST(request: Request) {
         );
     }
 }
+
+
+// import { NextResponse } from 'next/server';
+// import bcrypt from 'bcryptjs';
+// import crypto from 'crypto';
+// import jwt from 'jsonwebtoken';
+// import { z } from 'zod';
+// import { generateVerificationCode, sendVerificationCodeEmail } from '@/lib/email';
+
+// import { prisma } from '@/lib/prisma';
+
+// // Username validation helper
+// function isValidUsername(username: string): boolean {
+//     // Only allow alphanumeric characters, underscores, and periods
+//     // Must be 3-30 characters long
+//     const usernameRegex = /^[a-zA-Z0-9_.]{3,30}$/;
+//     return usernameRegex.test(username);
+// }
+
+// // Password strength validation helper
+// function isStrongPassword(password: string): { isValid: boolean; message: string } {
+//     if (password.length < 8) {
+//         return { isValid: false, message: "Password must be at least 8 characters long" };
+//     }
+
+//     // Check for at least one uppercase letter
+//     if (!/[A-Z]/.test(password)) {
+//         return { isValid: false, message: "Password must contain at least one uppercase letter" };
+//     }
+
+//     // Check for at least one lowercase letter
+//     if (!/[a-z]/.test(password)) {
+//         return { isValid: false, message: "Password must contain at least one lowercase letter" };
+//     }
+
+//     // Check for at least one number
+//     if (!/[0-9]/.test(password)) {
+//         return { isValid: false, message: "Password must contain at least one number" };
+//     }
+
+//     // Check for at least one special character
+//     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+//         return { isValid: false, message: "Password must contain at least one special character" };
+//     }
+
+//     return { isValid: true, message: "" };
+// }
+
+// // Calculate age from date of birth
+// function calculateAge(dateOfBirth: Date): number {
+//     const today = new Date();
+//     let age = today.getFullYear() - dateOfBirth.getFullYear();
+//     const monthDifference = today.getMonth() - dateOfBirth.getMonth();
+
+//     if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dateOfBirth.getDate())) {
+//         age--;
+//     }
+
+//     return age;
+// }
+
+// // Request body validation schema
+// // Update the registerSchema in /auth/register route
+// const registerSchema = z.object({
+//     username: z.string()
+//         .min(3, { message: "Username must be at least 3 characters" })
+//         .max(30, { message: "Username cannot exceed 30 characters" })
+//         .refine(val => isValidUsername(val), {
+//             message: "Username can only contain letters, numbers, underscores, and periods"
+//         }),
+//     email: z.string().email({ message: "Invalid email address" }),
+//     password: z.string()
+//         .min(8, { message: "Password must be at least 8 characters" })
+//         .refine((val: string) => isStrongPassword(val).isValid, {
+//             message: "Password must meet the strength requirements"
+//         }),
+//     confirmPassword: z.string(),
+//     firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
+//     lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
+//     bio: z.string().max(80, { message: "Bio cannot exceed 80 characters" }).optional(),
+//     gender: z.string().optional(),
+//     dateOfBirth: z.string()
+//         .transform(val => new Date(val))
+//         .refine(val => !isNaN(val.getTime()), {
+//             message: "Invalid date format"
+//         })
+//         .refine(val => calculateAge(val) >= 13, {
+//             message: "You must be at least 13 years old to register"
+//         }),
+//     interests: z.array(z.string()).optional(),
+//     profilePhotoUrl: z.string().url().optional().nullable(),
+//     // Add security fields
+//     pin: z.string().length(4).regex(/^\d{4}$/, { message: "PIN must be 4 digits" }).optional(),
+//     useFingerprint: z.boolean().optional(),
+//     useFaceId: z.boolean().optional(),
+//     // Device fields
+//     deviceId: z.string().optional(),
+//     deviceInfo: z.object({
+//         deviceName: z.string().optional(),
+//         deviceModel: z.string().optional(),
+//         osVersion: z.string().optional(),
+//         appVersion: z.string().optional(),
+//     }).optional(),
+// }).refine(data => data.password === data.confirmPassword, {
+//     message: "Passwords do not match",
+//     path: ["confirmPassword"],
+// });
+
+// const verificationCode = generateVerificationCode(6);
+
+// // Set expiration time (10 minutes from now)
+// const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+// export async function POST(request: Request) {
+//     try {
+//         const body = await request.json();
+
+//         // Validate request body
+//         const validationResult = registerSchema.safeParse(body);
+//         if (!validationResult.success) {
+//             return NextResponse.json(
+//                 {
+//                     success: false,
+//                     message: 'Validation error',
+//                     errors: validationResult.error.errors
+//                 },
+//                 { status: 400 }
+//             );
+//         }
+
+//         const {
+//             username,
+//             email,
+//             password,
+//             firstName,
+//             lastName,
+//             bio,
+//             gender,
+//             dateOfBirth,
+//             interests,
+//             profilePhotoUrl,
+//             deviceId,
+//             deviceInfo
+//         } = validationResult.data;
+
+//         // Check if email or username already exists
+//         const existingUser = await prisma.user.findFirst({
+//             where: {
+//                 OR: [
+//                     { email },
+//                     { username }
+//                 ]
+//             }
+//         });
+
+//         if (existingUser) {
+//             return NextResponse.json(
+//                 {
+//                     success: false,
+//                     message: existingUser.email === email
+//                         ? 'Email already in use'
+//                         : 'Username already taken'
+//                 },
+//                 { status: 409 }
+//             );
+//         }
+
+//         // Hash password
+//         const hashedPassword = await bcrypt.hash(password, 10);
+
+//         // Generate verification token
+//         const verificationToken = crypto.randomBytes(32).toString('hex');
+
+//         // Create user with transaction to handle interests
+//         const userData = await prisma.$transaction(async (tx) => {
+//             // Create the user first
+//             const newUser = await tx.user.create({
+//                 data: {
+//                     username,
+//                     email,
+//                     passwordHash: hashedPassword,
+//                     firstName,
+//                     lastName,
+//                     fullName: `${firstName} ${lastName}`,
+//                     bio,
+//                     gender,
+//                     dateOfBirth,
+//                     profilePhotoUrl,
+//                     verificationCode,
+//                     verificationCodeExpiry,
+//                 },
+//             });
+
+//             // Add interests if provided
+//             if (interests && interests.length > 0) {
+//                 for (const interestName of interests) {
+//                     // Create the interest if it doesn't exist
+//                     await tx.interest.upsert({
+//                         where: { name: interestName },
+//                         update: {},
+//                         create: { name: interestName },
+//                     });
+//                 }
+
+//                 // Connect interests to user
+//                 await tx.user.update({
+//                     where: { id: newUser.id },
+//                     data: {
+//                         interests: {
+//                             connect: interests.map(name => ({ name })),
+//                         },
+//                     },
+//                 });
+//             }
+
+//             // Record device if provided
+//             if (deviceId) {
+//                 const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
+
+//                 await tx.deviceHistory.create({
+//                     data: {
+//                         userId: newUser.id,
+//                         deviceId,
+//                         deviceName: deviceInfo?.deviceName,
+//                         deviceModel: deviceInfo?.deviceModel,
+//                         osVersion: deviceInfo?.osVersion,
+//                         appVersion: deviceInfo?.appVersion,
+//                         ipAddress,
+//                         isActive: true,
+//                     },
+//                 });
+//             }
+
+//             // Return user with interests
+//             return tx.user.findUnique({
+//                 where: { id: newUser.id },
+//                 include: {
+//                     interests: {
+//                         select: {
+//                             id: true,
+//                             name: true,
+//                         },
+//                     },
+//                 },
+//             });
+//         });
+
+//         if (!userData) {
+//             throw new Error('Failed to create user');
+//         }
+
+//         // Send verification email with code
+//         await sendVerificationCodeEmail(email, firstName, verificationCode);
+
+//         // For development/testing, include the verification code in the response
+//         // In production, remove this or use a feature flag
+//         const devInfo = process.env.NODE_ENV === 'development'
+//             ? { verificationCode }
+//             : {};
+
+//         // Generate JWT token for immediate authentication
+//         const token = jwt.sign(
+//             {
+//                 userId: userData.id,
+//                 email: userData.email,
+//                 role: userData.role,
+//                 username: userData.username
+//             },
+//             process.env.JWT_SECRET as string,
+//             { expiresIn: '24h' }
+//         );
+
+//         // Generate refresh token
+//         const refreshToken = jwt.sign(
+//             { userId: userData.id },
+//             process.env.JWT_REFRESH_SECRET as string,
+//             { expiresIn: '7d' }
+//         );
+
+//         // Update last login timestamp
+//         await prisma.user.update({
+//             where: { id: userData.id },
+//             data: { lastLoginAt: new Date() },
+//         });
+
+//         // Remove sensitive information from the response
+//         const {
+//             passwordHash,
+//             verificationCode: _code,
+//             verificationCodeExpiry: _expiry,
+//             forgotPasswordToken,
+//             forgotPasswordExpiry,
+//             pin,
+//             ...userWithoutSensitiveData
+//         } = userData;
+
+//         return NextResponse.json(
+//             {
+//                 success: true,
+//                 message: 'Registration successful! Please verify your email with the code sent to your email address.',
+//                 user: userWithoutSensitiveData,
+//                 token,
+//                 refreshToken,
+//                 ...devInfo
+//             },
+//             { status: 201 }
+//         );
+//     } catch (error: any) {
+//         console.error('Registration error:', error);
+//         return NextResponse.json(
+//             { success: false, message: 'Internal server error' },
+//             { status: 500 }
+//         );
+//     }
+// }
 
 
 

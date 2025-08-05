@@ -399,14 +399,13 @@
 
 'use client'
 
-import React, { useState, FormEvent, ChangeEvent } from 'react'; // <-- Import specific event types
+import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from "next/image";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Calendar, Loader2, KeyRound } from 'lucide-react';
 
-// --- TYPE ADDED ---
-// Props for the VerificationStep component are now clearly defined.
+// --- Props for the VerificationStep component ---
 interface VerificationStepProps {
     onSubmit: (otp: string) => void;
     email: string;
@@ -418,7 +417,6 @@ interface VerificationStepProps {
 const VerificationStep = ({ onSubmit, email, loading, error, setError }: VerificationStepProps) => {
     const [otp, setOtp] = useState('');
 
-    // --- TYPE ADDED ---
     const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (otp.length !== 6) {
@@ -448,7 +446,6 @@ const VerificationStep = ({ onSubmit, email, loading, error, setError }: Verific
                     <input
                         type="text"
                         value={otp}
-                        // --- TYPE ADDED ---
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setOtp(e.target.value)}
                         maxLength={6}
                         className="w-full text-center tracking-[1em] pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -472,27 +469,28 @@ const VerificationStep = ({ onSubmit, email, loading, error, setError }: Verific
 const RegisterPage = () => {
     const router = useRouter();
     const [step, setStep] = useState(1);
-
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', username: '', email: '',
         password: '', confirmPassword: '', dateOfBirth: ''
     });
-
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
     
+    // --- FIX #1: Ensure API_URL is loaded correctly ---
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    
+    if (!API_URL) {
+        return <div className="min-h-screen flex items-center justify-center bg-black text-red-500 text-center p-8 text-xl">FATAL ERROR: NEXT_PUBLIC_API_URL is not defined.<br/>Please check your .env.local file and restart the server.</div>;
+    }
 
-    // --- TYPE ADDED ---
+    // --- FIX #3: Correctly get name from event target ---
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = e.target;
-        setFormData(prev => ({...prev, [name]: value}));
+        setFormData(prev => ({...prev, [e.target.name]: e.target.value}));
     };
 
-    // --- TYPE ADDED ---
     const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
@@ -517,23 +515,18 @@ const RegisterPage = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
-
             const result = await response.json();
-
             if (!response.ok) {
                 throw new Error(result.message || 'Registration failed. Please try again.');
             }
-
             setStep(2);
-
-        } catch (err: any) { // <-- TYPE ADDED for `err`
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
     
-    // --- TYPE ADDED ---
     const handleVerifySubmit = async (otp: string) => {
         setError('');
         setLoading(true);
@@ -543,27 +536,21 @@ const RegisterPage = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email, code: otp }),
             });
-
             const result = await response.json();
-            
             if (!response.ok) {
                 throw new Error(result.message || 'Verification failed. Please try again.');
             }
-
             alert('Registration successful! Welcome to Amize.');
             router.push('/auth/login');
-
-        } catch (err: any) { // <-- TYPE ADDED for `err`
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-
     return (
         <div className="min-h-screen flex items-center justify-center py-20 bg-gradient-to-br from-gray-900 to-black">
-            {/* ... Background decorations ... */}
             <div className="absolute -top-8 -left-8 w-64 h-64 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob"></div>
             <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000"></div>
 
@@ -591,86 +578,75 @@ const RegisterPage = () => {
                     {step === 1 ? (
                         <form onSubmit={handleRegisterSubmit} className="space-y-4">
                             {error && (
-                                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-sm">
-                                    {error}
-                                </div>
+                                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-sm">{error}</div>
                             )}
-
                             <div className="grid grid-cols-2 gap-4">
                                <div className="relative">
-                                     <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full pl-6 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="First name" required />
-                                </div>
-                                <div className="relative">
-                                    <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full pl-6 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Last name" required />
-                                </div>
+                                    <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="w-full pl-6 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400" placeholder="First name" required />
+                               </div>
+                               <div className="relative">
+                                    <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="w-full pl-6 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400" placeholder="Last name" required />
+                               </div>
                             </div>
-                            
                             <div className="relative">
-                                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"/>
                                 <input type="text" name="username" value={formData.username} onChange={handleInputChange} className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white" placeholder="Choose username" required />
                             </div>
-                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"/>
                                 <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-2xl text-white" placeholder="Enter your email" required />
                             </div>
                             <div className="relative">
-                                <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
+                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"/>
                                 <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white" required />
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"/>
                                 <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleInputChange} className="w-full pl-12 pr-12 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white" placeholder="Create password" required />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
-                                    {showPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
-                                </button>
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><EyeOff className="h-5 w-5"/></button>
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"/>
                                 <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} className="w-full pl-12 pr-12 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white" placeholder="Confirm password" required />
-                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
-                                    {showConfirmPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
-                                </button>
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"><EyeOff className="h-5 w-5"/></button>
                             </div>
-                            
                             <div className="flex items-start space-x-3 py-2">
-                                {/* --- TYPE ADDED --- */}
                                 <input type="checkbox" id="terms" checked={acceptTerms} onChange={(e: ChangeEvent<HTMLInputElement>) => setAcceptTerms(e.target.checked)} className="w-4 h-4 mt-1 text-pink-500 bg-gray-800 border-gray-600 rounded focus:ring-pink-500" />
-                                <label htmlFor="terms" className="text-sm text-gray-300">
-                                    I agree to the{' '}
-                                    <Link href="/terms" className="text-pink-400 hover:text-pink-300">Terms</Link>
-                                    {' & '}<Link href="/privacy" className="text-pink-400 hover:text-pink-300">Privacy Policy</Link>
-                                </label>
+                                <label htmlFor="terms" className="text-sm text-gray-300">I agree to the <Link href="/terms" className="text-pink-400 hover:text-pink-300">Terms</Link> & <Link href="/privacy" className="text-pink-400 hover:text-pink-300">Privacy Policy</Link></label>
                             </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-pink-500 text-white py-4 rounded-2xl font-semibold hover:bg-pink-600 transition-all duration-200 shadow-lg disabled:opacity-50 flex items-center justify-center"
-                            >
+                            <button type="submit" disabled={loading} className="w-full bg-pink-500 text-white py-4 rounded-2xl font-semibold hover:bg-pink-600 transition-all duration-200 shadow-lg disabled:opacity-50 flex items-center justify-center">
                                 {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : 'Sign Up'}
                             </button>
                         </form>
                     ) : (
-                        <VerificationStep 
-                            onSubmit={handleVerifySubmit} 
-                            email={formData.email} 
-                            loading={loading}
-                            error={error}
-                            setError={setError}
-                        />
+                        <VerificationStep onSubmit={handleVerifySubmit} email={formData.email} loading={loading} error={error} setError={setError} />
                     )}
                 </div>
 
-                 {step === 1 && (
+                {/* --- FIX #2: Restore Social Login and Sign In sections --- */}
+                {step === 1 && (
                     <>
-                        {/* ... Social Login and Sign in link ... */}
+                        <div className="px-6 pb-4 w-full max-w-sm">
+                            <div className="flex items-center my-6">
+                                <div className="flex-1 border-t border-gray-700"></div>
+                                <span className="px-4 text-gray-500 text-sm">or continue with</span>
+                                <div className="flex-1 border-t border-gray-700"></div>
+                            </div>
+                            <div className="flex justify-center space-x-6">
+                                <button className="p-4 bg-gray-800 border border-gray-700 rounded-2xl hover:bg-gray-700"><svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></button>
+                                <button className="p-4 bg-gray-800 border border-gray-700 rounded-2xl hover:bg-gray-700"><svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></button>
+                                <button className="p-4 bg-gray-800 border border-gray-700 rounded-2xl hover:bg-gray-700"><svg className="w-6 h-6" fill="#fff" viewBox="0 0 512 512"><path d="M256,0C114.6,0,0,114.6,0,256s114.6,256,256,256s256-114.6,256-256S397.4,0,256,0z M265.1,142.1 c9.4-11.4,25.4-20.1,39.1-21.1c2.3,15.6-4.1,30.8-12.5,41.6c-9,11.6-24.5,20.5-39.5,20C249.6,167.7,256.6,152.4,265.1,142.1z M349.4,339.9c-10.8,16.4-26,36.9-44.9,37.1c-16.8,0.2-21.1-10.9-43.8-10.8c-22.7,0.1-27.5,11-44.3,10.8 c-18.9-0.2-33.3-18.7-44.1-35.1c-30.2-46-33.4-99.9-14.7-128.6c13.2-20.4,34.1-32.3,53.8-32.3c20,0,32.5,11,49.1,11 c16,0,25.8-11,48.9-11c17.5,0,36,9.5,49.2,26c-43.2,23.7-36.2,85.4,7.5,101.9C360,322.1,357.1,328.1,349.4,339.9z"/></svg></button>
+                            </div>
+                        </div>
+                        <div className="px-6 pb-8 text-center">
+                            <span className="text-gray-400">Already have an account? </span>
+                            <Link href="/auth/login" className="text-pink-400 font-medium hover:text-pink-300">Sign in</Link>
+                        </div>
                     </>
-                 )}
+                )}
             </div>
         </div>
     );
 };
 
 export default RegisterPage;
-
-

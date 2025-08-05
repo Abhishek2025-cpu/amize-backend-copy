@@ -396,7 +396,6 @@
 // RegisterPage.tsx
 
 // RegisterPage.tsx
-
 'use client'
 
 import React, { useState, FormEvent, ChangeEvent } from 'react';
@@ -468,6 +467,11 @@ const VerificationStep = ({ onSubmit, email, loading, error, setError }: Verific
 // The Main Registration Page Component
 const RegisterPage = () => {
     const router = useRouter();
+    
+    // --- MODIFICATION: Define the Base API URL here ---
+    // This can also be an environment variable like process.env.NEXT_PUBLIC_API_URL
+    const API_URL = 'https://amize-nodejs.onrender.com';
+
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', username: '', email: '',
@@ -479,14 +483,10 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
     
-    // --- FIX #1: Ensure API_URL is loaded correctly ---
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
-    
     if (!API_URL) {
-        return <div className="min-h-screen flex items-center justify-center bg-black text-red-500 text-center p-8 text-xl">FATAL ERROR: NEXT_PUBLIC_API_URL is not defined.<br/>Please check your .env.local file and restart the server.</div>;
+        return <div className="min-h-screen flex items-center justify-center bg-black text-red-500 text-center p-8 text-xl">FATAL ERROR: API_URL is not defined.<br/>Please check your code or environment variables.</div>;
     }
 
-    // --- FIX #3: Correctly get name from event target ---
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({...prev, [e.target.name]: e.target.value}));
     };
@@ -510,7 +510,8 @@ const RegisterPage = () => {
 
         setLoading(true);
         try {
-            const response = await fetch(`https://amize-nodejs.onrender.com/api/auth/register`, {
+            // --- MODIFICATION: Using the API_URL variable ---
+            const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -531,7 +532,8 @@ const RegisterPage = () => {
         setError('');
         setLoading(true);
         try {
-             const response = await fetch(`https://amize-nodejs.onrender.com/api/auth/verify-email`, {
+            // --- MODIFICATION: Using the API_URL variable ---
+             const response = await fetch(`${API_URL}/api/auth/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email, code: otp }),
@@ -623,7 +625,6 @@ const RegisterPage = () => {
                     )}
                 </div>
 
-                {/* --- FIX #2: Restore Social Login and Sign In sections --- */}
                 {step === 1 && (
                     <>
                         <div className="px-6 pb-4 w-full max-w-sm">

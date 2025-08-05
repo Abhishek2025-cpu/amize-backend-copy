@@ -510,7 +510,7 @@ const RegisterPage = () => {
 
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/api/auth/register`, {
+            const response = await fetch(`https://amize-nodejs.onrender.com/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -531,7 +531,7 @@ const RegisterPage = () => {
         setError('');
         setLoading(true);
         try {
-             const response = await fetch(`${API_URL}/api/auth/verify-email`, {
+             const response = await fetch(`https://amize-nodejs.onrender.com/api/auth/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email, code: otp }),

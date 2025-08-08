@@ -22,42 +22,43 @@ const LoginPage = () => {
         }));
     };
 
-    const handleSubmit = async () => {
-        if (!formData.email || !formData.password) {
-            setError('Please fill in all fields');
-            return;
+   const handleSubmit = async () => {
+    if (!formData.email || !formData.password) {
+        setError('Please fill in all fields');
+        return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+        const response = await fetch('https://amize-nodejs.onrender.com/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store _id in place of token (if your app still expects authToken)
+            localStorage.setItem('authToken', result.user?.id || '');
+            localStorage.setItem('userId', result.user?.id || '');
+
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
+        } else {
+            setError(result.message || 'Login failed');
         }
+    } catch (err) {
+        setError('Network error. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+};
 
-        setLoading(true);
-        setError('');
-
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Store tokens
-                localStorage.setItem('authToken', result.token);
-                localStorage.setItem('refreshToken', result.refreshToken);
-
-                // Redirect to dashboard
-                window.location.href = '/dashboard';
-            } else {
-                setError(result.message || 'Login failed');
-            }
-        } catch (err) {
-            setError('Network error. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center min-w-[450px] justify-center py-20 bg-gradient-to-br via-gray-900 to-gray-950">

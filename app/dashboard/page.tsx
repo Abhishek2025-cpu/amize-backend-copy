@@ -27,38 +27,39 @@ const Dashboard = () => {
         fetchUserData();
     }, []);
 
-    const fetchUserData = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                setError('No authentication token found');
-                return;
-            }
-
-            const response = await fetch('https://amize-backend-copy.onrender.com/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch user data');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                setUser(data.user);
-            } else {
-                setError(data.message || 'Failed to fetch user data');
-            }
-        } catch (err) {
-            setError('Error loading user data');
-            console.error('Dashboard error:', err);
-        } finally {
-            setLoading(false);
+const fetchUserData = async () => {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            setError('No authentication token found');
+            return;
         }
-    };
+
+        const response = await fetch('https://amize-nodejs.onrender.com/api/dashboard/auth/me', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch user data');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            setUser(data.user);
+        } else {
+            setError(data.message || 'Failed to fetch user data');
+        }
+    } catch (err) {
+        setError('Error loading user data');
+        console.error('Dashboard error:', err);
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     if (loading) {
         return (
